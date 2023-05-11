@@ -1,6 +1,12 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+$script = <<-SCRIPT
+  echo "I like Vagrant"
+  echo "I love Linux"
+  date > ~/vagrant_provisioned_at
+SCRIPT
+
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
@@ -18,9 +24,22 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision :docker
+  config.vm.provision :shell, path: "bootstrapup.sh"
+  config.vm.provision :file, source: "newfile", destination: "newfile"
+  config.vm.provision :file, source: "HTML", destination: "HTMLDIR"
+
   config.vm.define "server-1" do |dockerserver|
     dockerserver.vm.hostname = "server-1"
     dockerserver.vm.network "private_network", ip: "192.168.56.60"
+    dockerserver.vm.provision :shell, inline: "echo Hi class from shell inline"
+    dockerserver.vm.provision :shell, inline: $script
+    dockerserver.vm.provision :shell do |s|
+      s.inline = "echo $1"
+      s.args = ["AT" , "Class!"]
+    end
+    dockerserver.vm.provision "docker" do |d|
+      d.run "hello-world"
+    end
   end
   #
   # View the documentation for the provider you are using for more
