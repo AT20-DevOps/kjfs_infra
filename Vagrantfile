@@ -2,9 +2,8 @@
 # vi: set ft=ruby :
 
 $script = <<-SCRIPT
-  echo "I like Vagrant"
-  echo "I love Linux"
-  date > ~/vagrant_provisioned_at
+  cd service
+  docker-compose up -d
 SCRIPT
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
@@ -24,23 +23,23 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provision :docker
-  config.vm.provision :shell, path: "bootstrapup.sh"
-  config.vm.provision :file, source: "newfile", destination: "newfile"
-  config.vm.provision :file, source: "HTML", destination: "HTMLDIR"
+  config.vm.provision :docker_compose
 
-  config.vm.define "server-1" do |dockerserver|
-    dockerserver.vm.hostname = "server-1"
-    dockerserver.vm.network "private_network", ip: "192.168.56.60"
-    dockerserver.vm.provision :shell, inline: "echo Hi class from shell inline"
-    dockerserver.vm.provision :shell, inline: $script
-    dockerserver.vm.provision :shell do |s|
-      s.inline = "echo $1"
-      s.args = ["AT" , "Class!"]
-    end
-    dockerserver.vm.provision "docker" do |d|
-      d.run "hello-world"
-    end
+  config.vm.define "server-1" do |serveremtpy|
+    serveremtpy.vm.hostname = "ci-server"
+    serveremtpy.vm.network "private_network", ip: "192.168.56.60"
   end
+
+  config.vm.define "server-2" do |dockerserver|
+    dockerserver.vm.hostname = "server-2"
+    dockerserver.vm.network "private_network", ip: "192.168.56.61"
+    dockerserver.vm.provision :file, source: "service/compiler_service", destination: "service/compiler_service"
+    dockerserver.vm.provision :file, source: "service/docker-compose.yaml", destination: "service/docker-compose.yaml"
+    dockerserver.vm.provision :file, source: "service/.env", destination: "service/.env"
+    dockerserver.vm.provision :shell, inline: $script
+  end
+
+
   #
   # View the documentation for the provider you are using for more
   # information on available options.
